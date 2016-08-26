@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Flat UI - Free Bootstrap Framework and Theme</title>
+  <meta name="description"
+        content="Flat UI Kit Free is a Twitter Bootstrap Framework design and Theme, this responsive framework includes a PSD and HTML version."/>
+
+  <meta name="viewport" content="width=1000, initial-scale=1.0, maximum-scale=1.0">
+
+  <!-- Loading Bootstrap -->
+  <link href="dist/css/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Loading Flat UI -->
+  <link href="dist/css/flat-ui.css" rel="stylesheet">
+  <link href="docs/assets/css/demo.css" rel="stylesheet">
+
+  <link rel="shortcut icon" href="img/favicon.ico">
+
+  <!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
+  <!--[if lt IE 9]>
+  <script src="dist/js/vendor/html5shiv.js"></script>
+  <script src="dist/js/vendor/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="container">
+  <div class="row demo-row">
+    <div class="col-xs-12">
+      <nav class="navbar navbar-inverse navbar-embossed" role="navigation">
+        <div class="navbar-header">
+          <a class="navbar-brand">日历外链生成工具</a>
+        </div>
+      </nav><!-- /navbar -->
+    </div>
+  </div> <!-- /row -->
+
+  <div class="row">
+    <h3 class="demo-panel-title">选择跳转方式</h3>
+    <div class="col-xs-3">
+      <select class="form-control select select-primary" data-toggle="select" id="action"
+              onchange="onActionChange(this.options[this.options.selectedIndex].value)">
+        <option value="action" selected>Action跳转</option>
+        <option value="package">包名跳转</option>
+      </select>
+    </div> <!-- /.col-xs-6 -->
+    <div class="col-xs-9">
+      <label class="demo-panel-title" id="actionDesc">app://action/action</label>
+    </div>
+  </div> <!-- /.row -->
+
+  <div class="login-form">
+    <div class="form-group">
+      <input type="text" class="form-control login-field" value="" placeholder="Action" id="actionName"/>
+    </div>
+
+    <div class="form-group">
+      <input type="text" class="form-control login-field" value="" placeholder="Uri" id="dataUri"/>
+    </div>
+
+    <div class="tagsinput-primary">
+      <a class="has-error">参数添加[可选]：key=value形式回车，如果value为url形式请先encode处理</a>
+      <input id="params" name="tagsinput" class="tagsinput" data-role="tagsinput" value="" />
+    </div>
+    <a class="btn btn-primary btn-lg btn-block" id="generate">生成链接</a>
+  </div>
+
+  <div class="login-form" id="resultContainer" style="display: none">
+    <div class="form-group">
+      <p style="word-wrap:break-word; word-break:normal;" id="result"></p>
+    </div>
+  </div>
+
+</div> <!-- /container -->
+
+<script src="./js/Uri.js"></script>
+<script src="dist/js/vendor/jquery.min.js"></script>
+<script src="dist/js/vendor/video.js"></script>
+<script src="dist/js/flat-ui.min.js"></script>
+<script src="docs/assets/js/application.js"></script>
+
+<script>
+  function isUri(str) {
+    var uri = new Uri(str);
+    console.log(uri);
+    findUriParam(uri.queryPairs);
+    if (!uri.protocol()) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  var actionPackage = "app://pkg/{packageName}/{targetActivity}[?params]";
+  var actionAction = "app://action/{actionName}[/{dataUri}][?params]";
+
+  // init view
+  var actionSelect = document.getElementById('action');
+  var actionDesc = document.getElementById('actionDesc');
+
+  var input1 = document.getElementById("actionName");
+  var input2 = document.getElementById("dataUri");
+  var paramsInput = document.getElementById("params");
+
+  var postButton = document.getElementById("generate");
+
+  var result = document.getElementById("result");
+  var resultContainer = document.getElementById("resultContainer");
+
+  var uri = new Uri("app://action/android.intent.action.VIEW/mzlife?id=255&m=hello#top");
+
+  function onActionChange(value) {
+    if (value === "action") {
+      input1.placeholder = "Action";
+      input2.placeholder = "Uri";
+      actionDesc.innerHTML = actionAction;
+    } else if (value === "package") {
+      input1.placeholder = "packageName/activity";
+      input2.placeholder = "DataUri[option]";
+      actionDesc.innerHTML = actionPackage;
+    }
+  }
+
+  function postClick() {
+    var actionType = document.getElementById("action").value;
+    console.log(actionType);
+    var actionUrl;
+    switch (actionType) {
+      case "action" :
+        actionUrl = buildActionUrl();
+            break;
+      case "package" :
+        actionUrl = buildPackageUrl();
+            break;
+    }
+
+    if (resultContainer.style.display == "none") {
+      resultContainer.style.display = "block";
+    }
+
+    result.innerHTML = actionUrl;
+  }
+
+  function buildActionUrl() {
+    var schema = "app://action/";
+    var actionName = input1.value;
+    var dataUrl = input2.value;
+
+    var url;
+    // action
+    if (!actionName) {
+      alert("Action不能为空！");
+      return null;
+    }
+
+    // data uri
+    if (dataUrl) {
+      if (!isUri(dataUrl)) {
+        alert("DataUri格式不正确！" + dataUrl);
+      }
+
+      var uri = new Uri(dataUrl);
+      var encodeQuery;
+      if (findUriParam(uri.queryPairs)) {
+        encodeQuery = encodeURIComponent(uri.uriParts.query);
+      } else {
+        encodeQuery = uri.uriParts.query;
+      }
+
+      if (encodeQuery) {
+        console.log("query = " + encodeQuery);
+      }
+
+      var newSource;
+      if (uri.uriParts.query) {
+        var reg = new RegExp(uri.uriParts.query, "g");
+        newSource = uri.uriParts.source.replace(reg, "").trim() + encodeQuery;
+      } else {
+        newSource = uri.uriParts.source.trim();
+      }
+      url = schema + actionName + "/" + encodeURIComponent(newSource);
+    } else {
+      url = schema + actionName;
+    }
+
+    // params
+    url += "?" + parseParams(paramsInput.value);
+
+    return url;
+  }
+
+  function buildPackageUrl() {
+    var schema = "app://pkg/";
+    var component = input1.value;
+    var dataUrl = input2.value;
+
+    var url;
+    if (!component) {
+      alert("Component不能为空！");
+    }
+
+    if (component.indexOf("/") === -1) {
+      alert("Component必须包含包名和对应的Activity路径！");
+    }
+
+    // data uri
+    if (dataUrl) {
+      if (!isUri(dataUrl)) {
+        alert("DataUri格式不正确！" + dataUrl);
+      }
+
+      var uri = new Uri(dataUrl);
+      var encodeQuery;
+      if (findUriParam(uri.queryPairs)) {
+        encodeQuery = encodeURIComponent(uri.uriParts.query);
+      } else {
+        encodeQuery = uri.uriParts.query;
+      }
+
+      var newSource;
+      if (uri.uriParts.query) {
+        var reg = new RegExp(uri.uriParts.query, "g");
+        newSource = uri.uriParts.source.replace(reg, "").trim() + encodeQuery;
+      } else {
+        newSource = uri.uriParts.source.trim();
+      }
+      url = schema + component + "/" + encodeURIComponent(newSource);
+    } else {
+      url = schema + component;
+    }
+
+    // params
+    url += "?" + parseParams(paramsInput.value);
+    return url;
+  }
+
+  function parseParams(tagsValue) {
+    var i, ps, p, n, value = "";
+    var pairs = [];
+
+    if (typeof(tagsValue) === 'undefined' || tagsValue === null || tagsValue === '') {
+      return pairs;
+    }
+
+    ps = tagsValue.toString().split(',');
+    for (i = 0; i < ps.length; i++) {
+      p = ps[i];
+      n = p.indexOf('=');
+
+      if (n !== 0) {
+        if (i !== 0) {
+          value += "&";
+        }
+
+        value += p;
+      }
+    }
+
+    return value;
+  }
+
+  function findUriParam(params) {
+    for (var i = 0; i < params.length; i++) {
+      if (isUri(params[i][1])) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  if (postButton.addEventListener) {
+    postButton.addEventListener("click", postClick, false);
+  }
+
+</script>
+
+</body>
+</html>
