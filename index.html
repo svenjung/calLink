@@ -22,6 +22,10 @@
     <script src="dist/js/vendor/html5shiv.js"></script>
     <script src="dist/js/vendor/respond.min.js"></script>
     <![endif]-->
+
+    <style type="text/css">
+        .marginTop {margin-top: 20px;}
+    </style>
 </head>
 <body>
 <div class="container">
@@ -62,7 +66,15 @@
             <a class="has-error">参数添加[可选]：key=value形式回车，如果value为url形式请先encode处理</a>
             <input id="params" name="tagsinput" class="tagsinput" data-role="tagsinput" value=""/>
         </div>
-        <a class="btn btn-primary btn-lg btn-block" id="generate">生成链接</a>
+
+        <div class="input-group" id="setPackageContainer" style="visibility: visible">
+            <span class="input-group-addon">指定包名</span>
+            <input type="text" id="package" class="form-control" placeholder="Package name"/>
+        </div>
+
+        <div class="marginTop">
+            <a class="btn btn-primary btn-lg btn-block" id="generate">生成链接</a>
+        </div>
     </div>
 
     <div class="login-form" id="resultContainer" style="display: none">
@@ -105,6 +117,9 @@
     var result = document.getElementById("result");
     var resultContainer = document.getElementById("resultContainer");
 
+    var setPackage = document.getElementById("setPackageContainer");
+    var package = document.getElementById("package");
+
     var uri = new Uri("https://game-res.meizu.com/resources/cooperation/dist/gameinfo.html?appid=1892314&qd=102010#/GameDetail");
 
     function onActionChange(value) {
@@ -112,10 +127,12 @@
             input1.placeholder = "Action";
             input2.placeholder = "Uri";
             actionDesc.innerHTML = actionAction;
+            setPackage.style.visibility = 'visible';
         } else if (value === "package") {
             input1.placeholder = "packageName/activity";
             input2.placeholder = "DataUri[option]";
             actionDesc.innerHTML = actionPackage;
+            setPackage.style.visibility = 'hidden';
         }
     }
 
@@ -185,6 +202,18 @@
 
         // params
         var params = parseParams(paramsInput.value);
+        var packageName = null;
+        if (setPackage.style.visibility == 'visible') {
+            if (package.value) {
+                packageName = "setTargetPackage" + package.value;
+            }
+        }
+        if (params) {
+            params += packageName;
+        } else {
+            params = packageName;
+        }
+
         if (params) {
             url += "?" + params;
         }
